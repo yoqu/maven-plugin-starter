@@ -15,18 +15,18 @@
     </p> 
 </p>
 
-# 做这款工具解决的痛点
+# 为什么做这款工具
 > 随着spring boot的快速发展，现在一个服务的的部署方式越来越简单，轻松，特别是微服务的兴起，docker容器化。使得spring boot的jar优势越来越大仅需使用`java -jar xxx.jar`即可启动。
 但同时，对于传统企业和公司，未引入docker容器化的部署方案,又想使用jar包独立启动会遇到以下几个问题
 1. 对于需要自定义jvm参数或者后台挂起等需求需要手动写脚本（每次控制台写太累了）
-2. jar内的配置文件修改异常麻烦（有时需要运维做维护配置，假设你的配置有问题，还需要重新打包，遇到龟速网络太浪费时间了）
+2. jar内的配置文件修改异常麻烦（有时需要运维做维护配置，假设你的配置有问题，还需要重新打包，遇到龟速网络拷包太浪费时间了）
+3. 一台服务器有多个微服务运行，不知道某个进程是什么服务（通过端口检查也知道，不过这好像有点麻烦）。
 
 综上，这款小工具通过预置项目启动、停止、重启脚本。用户在编译后生成的部署包运维只需两行命令即可运行。1: `unzip xxx.war` 2：`sh xxx/bin/start.sh`。
 
 **注**：war包使用tomcat部署不在本次讨论范围内。
 
-项目部署后的结构
-目录结构：
+项目编译后的目录结构：
 
 ```
 ├── META-INF
@@ -45,16 +45,8 @@
 - 支持jvm参数自定义配置
 - 支持个性化启动类查找
 - 支持remote debug，jmx
+- jps命令可显示服务名称*（妈妈再也不用担心我的进程是什么服务啦）*
 
-注：
-  - jvms中配置jvm参数，如果用户不进行该项配置则bin脚本中就会填充默认参数
-  - mainClass中可直接填入启动类全限定名来进行参数配置
-  - 若mainClass不进行配置，则会启动启动类自动查找功能
-  - 可通过matchClass参数对查找匹配规则进行配置
-  - 若mainClass不进行配置则默认查找拥有@SpringBootApplication注解的类
-  - 若配置mainClass，则会进行包含匹配
-  - 比如:matchClass配置为App，则类名为App，Application，父类名为App，Application的类都会被匹配成功
-  - 启动类只能有一个，若匹配到多个则会报错
 # 快速集成
 1. 在pom文件中设置打包方式为war
 ```xml
@@ -73,137 +65,49 @@
         <goals>
             <goal>bin</goal>
         </goals>
-        <configuration>
+        </execution>
+    </executions>
+</plugin> 
+```
+
+插件本身是支持配置，可指定启动主函数以及jvm参数，对于Spring boot支持自动查询MainClass，无需用户手动填写。
+
+配置示例：
+
+```xml
+<plugin>
+    <groupId>com.uyoqu.framework</groupId>
+	<artifactId>maven-plugin-starter</artifactId>
+	<version>1.0.0</version>
+    <executions>
+        <execution>
+        <phase>package</phase>
+        <goals>
+            <goal>bin</goal>
+        </goals>
+        </execution>      
+    </executions>
+  	<configuration>
             <jvms>
                 <jvm>-server</jvm>
                 <jvm>-Xmx512m</jvm>
             </jvms>
             <mainClass>com.xxx.xxx</mainClass>
             <matchClass>App</matchClass>
-        </configuration>
-        </execution>
-    </executions>
-</plugin> 
+     </configuration>
+</plugin>        
+
 ```
 
 
-具体生成脚本示例展示： 
-- start脚本：
-``` bash
-#!/bin/bash
 
-source /etc/profile
-cd `dirname $0`
-BIN_DIR=`pwd`
-cd ..
-DEPLOY_DIR=`pwd`
-CLASSES=$DEPLOY_DIR/WEB-INF/classes
+**注**：
 
-JMX_HOST_NAME=0.0.0.0
-JMX_PORT=1099
-
-BITS=`java -version 2>&1 | grep -i 64-bit`
-
-MAIN=xxx
-JAVA_MEM_OPTS=" -xxx "
-SERVER_NAME="xxx"
-if [ -z "$SERVER_NAME" ]; then
-    SERVER_NAME=`hostname`
-fi
-
-PIDS=`ps aux | grep java | grep "$CLASSES" |awk '{print $2}'`
-if [ -n "$PIDS" ]; then
-    echo "ERROR: The $SERVER_NAME already started!"
-    echo "PID: $PIDS"
-    exit 1
-fi
-
-if [ -n "$SERVER_PORT" ]; then
-    SERVER_PORT_COUNT=`netstat -tln | grep $SERVER_PORT | wc -l`
-    if [ $SERVER_PORT_COUNT -gt 0 ]; then
-        echo "ERROR: The $SERVER_NAME port $SERVER_PORT already used!"
-        exit 1
-    fi
-fi
-
-
-LIB_DIR=$DEPLOY_DIR/WEB-INF/lib
-LIB_JARS=`ls $LIB_DIR|grep .jar|awk '{print "'$LIB_DIR'/"$0}'|tr "\n" ":"`
-
-JAVA_OPTS=" -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT+08"
-
-JAVA_DEBUG_OPTS=""
-if [ "$1" = "debug" ]; then
-    JAVA_DEBUG_OPTS=" -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n "
-fi
-
-if [ "$APM_AGENT_HOME" ]; then
-    echo "APM plugin detected,auto enable APM plugin,apm path:$APM_AGENT_HOME"
-    JAVA_OPTS=$JAVA_OPTS" -javaagent:$APM_AGENT_HOME/apm-agent-2.1.6-rc2.jar"s
-fi
-
-JAVA_JMX_OPTS=""
-if [ "$1" = "jmx" ]; then
-    JAVA_JMX_OPTS=" -Djava.rmi.server.hostname=$JMX_HOST_NAME -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false "
-fi
-
-echo -e "Starting the $SERVER_NAME ...\c"
-nohup java $JAVA_OPTS $JAVA_MEM_OPTS $JAVA_DEBUG_OPTS $JAVA_JMX_OPTS -classpath $CLASSES:$LIB_JARS $MAIN > nohup.out 2>&1 < /dev/null &
-
-echo "OK!"
-PIDS=`ps aux | grep java | grep "$DEPLOY_DIR" | awk '{print $2}'`
-echo "PID: $PIDS"
-```
-- stop脚本：
-``` bash
-#!/bin/bash
-
-source /etc/profile
-cd `dirname $0`
-BIN_DIR=`pwd`
-cd ..
-DEPLOY_DIR=`pwd`
-CLASSES=$DEPLOY_DIR/WEB-INF/classes
-
-SERVER_NAME="xxx"
-if [ -z "$SERVER_NAME" ]; then
-    SERVER_NAME=`hostname`
-fi
-
-PIDS=`ps aux | grep java | grep "$CLASSES" |awk '{print $2}'`
-if [ -z "$PIDS" ]; then
-    echo "ERROR: The $SERVER_NAME does not started!"
-    exit 1
-fi
-
-echo -e "Stopping the $SERVER_NAME ...\c"
-for PID in $PIDS ; do
-    kill $PID > /dev/null 2>&1
-done
-
-COUNT=0
-while [ $COUNT -lt 1 ]; do
-    echo -e ".\c"
-    sleep 1
-    COUNT=1
-    for PID in $PIDS ; do
-        PID_EXIST=`ps -f -p $PID | grep java`
-        if [ -n "$PID_EXIST" ]; then
-            COUNT=0
-            break
-        fi
-    done
-done
-
-echo "OK!"
-echo "PID: $PIDS"
-```
-- restart.sh:
-``` bash
-#!/bin/bash
-cd `dirname $0`
-./stop.sh
-./start.sh
-```
-注：示例中的xxx部分根据项目实际情况进行生成
-
+- jvms中配置jvm参数，如果用户不进行该项配置则bin脚本中就会填充默认参数
+- mainClass中可直接填入启动类全限定名来进行参数配置
+- 若mainClass不进行配置，则会启动启动类自动查找功能
+- 可通过matchClass参数对查找匹配规则进行配置
+- 若mainClass不进行配置则默认查找拥有@SpringBootApplication注解的类
+- 若配置mainClass，则会进行包含匹配
+- 比如:matchClass配置为App，则类名为App，Application，父类名为App，Application的类都会被匹配成功
+- 启动类只能有一个，若匹配到多个则会报错

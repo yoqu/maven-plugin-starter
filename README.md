@@ -1,3 +1,22 @@
+<p align="center">
+    <h3 align="center">Maven Plugin Stater</h3>
+    <p align="center">
+        A spring boot applicaiton quick running script.
+        <br>
+        <a href="https://travis-ci.org/xuxueli/xxl-job">
+            <img src="https://travis-ci.org/com.uyoqu.framework/maven-plugin-starter.svg?branch=master" >
+        </a>
+        <a href="https://maven-badges.herokuapp.com/maven-central/com.uyoqu.framework/maven-plugin-starter/">
+            <img src="https://maven-badges.herokuapp.com/maven-central/com.uyoqu.framework/maven-plugin-starter/badge.svg" >
+        </a>
+         <a href="https://github.com/yoqu/maven-plugin-starter/releases">
+             <img src="https://img.shields.io/github/release/yoqu/maven-plugin-starter.svg" >
+         </a>
+         <a href="http://www.apache.org/licenses/LICENSE-2.0">
+             <img src="https://img.shields.io/badge/license-APACHEv2-blue.svg" >
+         </a>
+    </p> 
+</p>
 
 # 效果预览
 目录结构：

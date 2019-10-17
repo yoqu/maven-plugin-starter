@@ -3,9 +3,6 @@
     <p align="center">
         A spring boot applicaiton quick running script.
         <br>
-        <a href="https://travis-ci.org/xuxueli/xxl-job">
-            <img src="https://travis-ci.org/com.uyoqu.framework/maven-plugin-starter.svg?branch=master" >
-        </a>
         <a href="https://maven-badges.herokuapp.com/maven-central/com.uyoqu.framework/maven-plugin-starter/">
             <img src="https://maven-badges.herokuapp.com/maven-central/com.uyoqu.framework/maven-plugin-starter/badge.svg" >
         </a>

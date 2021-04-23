@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.uyoqu.framework</groupId>
     <artifactId>maven-plugin-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>maven-plugin</packaging>
     <name>maven-plugins-starter</name>
     <description>A spring boot applicaiton quick running script.</description>

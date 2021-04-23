@@ -39,7 +39,7 @@ fi
 LIB_DIR=$DEPLOY_DIR/WEB-INF/lib
 LIB_JARS=`ls $LIB_DIR|grep .jar|awk '{print "'$LIB_DIR'/"$0}'|tr "\n" ":"`
 
-JAVA_OPTS=" -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT+08"
+JAVA_OPTS=" -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true"
 
 JAVA_DEBUG_OPTS=""
 if [ "$1" = "debug" ]; then
